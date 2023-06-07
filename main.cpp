@@ -35,7 +35,55 @@ void input_table(table_t &table, row_t &accept_states) {
     return;
 }
 
+elem_t char2elem(char c) {
+    switch (c)
+    {
+    case 'p':
+        return 0;
+    case 'a':
+        return 1;
+    case 'r':
+        return 2;
+    case 'e':
+        return 3;
+    case 'l':
+        return 4;
+    default:
+        return -1;
+    }
+}
 
+void parem(string str, const table_t &table,const row_t &accept_states, size_t p) {
+    size_t start_position;
+    size_t final_position;
+    string pi_input;
+    for (auto rank = 0; rank < p; rank++) {
+        // SPLIT & COMMUNICATE
+        start_position = rank * (str.size()/p);
+        if (rank = p-1) { final_position = str.size() - 1; }
+        else { final_position = (rank+1) * (str.size()/p); }
+        pi_input = str.substr(start_position, final_position);
+        // CALCULATE INITIAL STATES
+        // - Calc S
+        row_t S; // TODO: cambiar a set
+        for (elem_t q=0; q<table.size(); q++) {
+            auto next_q = table[q][char2elem(pi_input[0])];
+            if (next_q != -1) {
+                S.push_back(q);
+            }
+        }
+        // - Calc L
+        row_t L; // TODO: cambiar a set
+        for (elem_t q=0; q<table.size(); q++) {
+            auto next_q = table[q][char2elem(pi_input[0])];
+            if (next_q != -1) {
+                L.push_back(q);
+            }
+        }
+        // TODO L S INTERSECTION
+    }
+
+}
 
 int main() {
     table_t transition_table;
