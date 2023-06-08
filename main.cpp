@@ -39,6 +39,7 @@ void input_table(table_t &table, elem_set &accept_states) {
 }
 
 elem_t char2elem(char c) {
+    // TODO: modificar con ASCII para version general. este es para el input de ejemplo
     switch (c)
     {
     case 'p':
