@@ -4,6 +4,7 @@
 #include <string>
 #include <algorithm>
 
+#include<mpi.h>
 
 using namespace std;
 
@@ -38,6 +39,11 @@ void input_table(table_t &table, elem_set &accept_states) {
     return;
 }
 
+void input_str(string &str) {
+    cin >> str;
+    return;
+}
+
 elem_t char2elem(char c) {
     // TODO: modificar con ASCII para version general. este es para el input de ejemplo
     switch (c)
@@ -64,7 +70,7 @@ elem_t rem(string &str, elem_t q, const table_t &table) {
     return q;
 }
 
-bool parem(string str, const table_t &table,const elem_set &accept_states, size_t p) {
+bool parem(string &str, const table_t &table,const elem_set &accept_states, size_t p) {
     size_t start_position;
     size_t final_position;
     string pi_input;
@@ -143,29 +149,48 @@ bool parem(string str, const table_t &table,const elem_set &accept_states, size_
     }
 }
 
-int main() {
+int main(int argc,char **argv) {
+    int NoOfProcess, ProcessNo;
+    MPI_Init(&argc, &argv);    
+    MPI_Comm_size(MPI_COMM_WORLD, &NoOfProcess);
+    MPI_Comm_rank(MPI_COMM_WORLD, &ProcessNo);
+
     table_t transition_table;
     elem_set accept_states;
-    input_table(transition_table, accept_states);
-
-    cout << "[INPUTS]" << endl;
-    cout << "Transition Table:" << endl;
-    for (auto &row : transition_table) {
-        for (auto &e : row) {
+    string str;
+    bool res;
+    if (ProcessNo == 0) {
+        // GET TABLE FROM STD INPUT
+        input_table(transition_table, accept_states);
+        // GET INPUT STR FROM STD INPUT
+        input_str(str);
+        // PRINT FOR DEBUGGING
+        cout << "[INPUTS]" << endl;
+        cout << "Transition Table:" << endl;
+        for (auto &row : transition_table) {
+            for (auto &e : row) {
+                cout << e << " "; 
+            }
+            cout << endl;
+        }
+        cout << "Acceptance states:" << endl;
+        for (auto &e : accept_states) {
             cout << e << " "; 
         }
         cout << endl;
+        cout << "String:" << endl;
+        cout << str << endl;
+        cout << "[-----]" << endl;
     }
-    cout << "Acceptance states:" << endl;
-    for (auto &e : accept_states) {
-        cout << e << " "; 
-    }
-    cout << endl;
-    cout << "[-----]" << endl;
 
-    string str = "plaraparallelapareparapl";
-    auto res = parem(str, transition_table, accept_states, 4);
-    cout << "RESULT:" << res << endl;
-    cout << "END" << endl;
+    // PaREM
+    if (ProcessNo == 0) res = parem(str, transition_table, accept_states, 4);
+
+    if (ProcessNo == 0){
+        cout << "RESULT:" << res << endl;
+        cout << "END" << endl;        
+    }
+
+    MPI_Finalize();
     return 0;
 }
