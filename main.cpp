@@ -3,6 +3,7 @@
 #include <set>
 #include <string>
 #include <algorithm>
+#include <cstring>
 
 #include<mpi.h>
 
@@ -39,8 +40,16 @@ void input_table(table_t &table, elem_set &accept_states) {
     return;
 }
 
-void input_str(string &str) {
-    cin >> str;
+void input_str(char* &str, size_t &str_len) {
+    // Accept string
+    string tmp_str;
+    cin >> tmp_str;
+    // Reserve space
+    str_len = tmp_str.length();
+    str= new char[str_len + 1]; //+1 for null terminator
+    // Copy to char array
+    strcpy(str, tmp_str.c_str());
+    // Return
     return;
 }
 
@@ -63,31 +72,38 @@ elem_t char2elem(char c) {
     }
 }
 
-elem_t rem(string &str, elem_t q, const table_t &table) {
-    for (auto &c : str) {
+elem_t rem(char* str, size_t str_len, elem_t q, const table_t &table) {
+    for (size_t i=0;i<str_len; i++) {
+        char c = str[i];
         q = table[q][char2elem(c)];
     }
     return q;
 }
 
-bool parem(string &str, const table_t &table,const elem_set &accept_states, size_t p) {
+bool parem(char* str, size_t str_len, const table_t &table,const elem_set &accept_states, size_t p, size_t rnk) {
     size_t start_position;
     size_t final_position;
-    string pi_input;
+    char* pi_input;
+    size_t pi_input_len;
     char pi_prev;
 
     vector<row_t> partial_result;
 
-    for (auto rank = 0; rank < p; rank++) {
+    for (size_t rank=0;rank<p;rank++){
         // SPLIT & COMMUNICATE
+
         // Scatter
-        start_position = rank * (str.size()/p);
-        if (rank == p-1) { final_position = str.size(); }
-        else { final_position = (rank+1) * (str.size()/p); }
-        pi_input = str.substr(start_position, final_position-start_position);
+        // > Get start and end
+        start_position = rank * (str_len/p);
+        if (rank == p-1) { final_position = str_len; }
+        else { final_position = (rank+1) * (str_len/p); }
+        // > Copy
+        pi_input_len = final_position-start_position;
+        pi_input = new char[pi_input_len+1];
+        strncpy(pi_input, str+start_position, pi_input_len);
+
         // Send/Recv
         if (rank != 0) {pi_prev=str[start_position-1];}
-
 
         // CALCULATE INITIAL STATES
         cout << "RANK" << rank << " - str:" << pi_input << endl;
@@ -123,7 +139,7 @@ bool parem(string &str, const table_t &table,const elem_set &accept_states, size
         row_t transition(table.size(),-1);
         cout << "R: ";
         for (auto &q : R) {
-            auto next_q = rem(pi_input,q,table);
+            auto next_q = rem(pi_input,pi_input_len,q,table);
             transition[q] = next_q;
             cout << q << "->" << next_q << " ";
         }
@@ -157,13 +173,14 @@ int main(int argc,char **argv) {
 
     table_t transition_table;
     elem_set accept_states;
-    string str;
+    char* str;
+    size_t str_len;
     bool res;
     if (ProcessNo == 0) {
         // GET TABLE FROM STD INPUT
         input_table(transition_table, accept_states);
         // GET INPUT STR FROM STD INPUT
-        input_str(str);
+        input_str(str, str_len);
         // PRINT FOR DEBUGGING
         cout << "[INPUTS]" << endl;
         cout << "Transition Table:" << endl;
@@ -184,7 +201,7 @@ int main(int argc,char **argv) {
     }
 
     // PaREM
-    if (ProcessNo == 0) res = parem(str, transition_table, accept_states, 4);
+    if (ProcessNo == 0) res = parem(str, str_len, transition_table, accept_states, NoOfProcess, ProcessNo);
 
     if (ProcessNo == 0){
         cout << "RESULT:" << res << endl;
