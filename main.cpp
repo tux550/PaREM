@@ -16,9 +16,9 @@ using row_t = vector<elem_t>;
 using table_t = vector<row_t>;
 
 void input_table(table_t &table, elem_set &accept_states) {
-    size_t alphabet_size;
-    size_t transitions_n;
-    size_t accept_n;
+    unsigned long alphabet_size;
+    unsigned long transitions_n;
+    unsigned long accept_n;
     elem_t tmp;
     // GET DIMENSIONS
     cin >> transitions_n >> alphabet_size >> accept_n;
@@ -40,7 +40,7 @@ void input_table(table_t &table, elem_set &accept_states) {
     return;
 }
 
-void input_str(char* &str, size_t &str_len) {
+void input_str(char* &str, unsigned long &str_len) {
     // Accept string
     string tmp_str;
     cin >> tmp_str;
@@ -72,41 +72,68 @@ elem_t char2elem(char c) {
     }
 }
 
-elem_t rem(char* str, size_t str_len, elem_t q, const table_t &table) {
-    for (size_t i=0;i<str_len; i++) {
+elem_t rem(char* str, unsigned long str_len, elem_t q, const table_t &table) {
+    for (unsigned long i=0;i<str_len; i++) {
         char c = str[i];
         q = table[q][char2elem(c)];
     }
     return q;
 }
 
-bool parem(char* str, size_t str_len, const table_t &table,const elem_set &accept_states, size_t p, size_t rnk) {
-    size_t start_position;
-    size_t final_position;
+bool parem(char* str, unsigned long str_len, const table_t &table,const elem_set &accept_states, unsigned long p, unsigned long rank) {
+    unsigned long start_position;
+    unsigned long final_position;
+    unsigned long shift;
+    unsigned long total_scatter_len;
+    unsigned long part_scatter_len;
     char* pi_input;
-    size_t pi_input_len;
+    unsigned long pi_input_len;
     char pi_prev;
 
     vector<row_t> partial_result;
 
-    for (size_t rank=0;rank<p;rank++){
-        // SPLIT & COMMUNICATE
+    // SPLIT & COMMUNICATE
 
-        // Scatter
-        // > Get start and end
-        start_position = rank * (str_len/p);
-        if (rank == p-1) { final_position = str_len; }
-        else { final_position = (rank+1) * (str_len/p); }
-        // > Copy
-        pi_input_len = final_position-start_position;
-        pi_input = new char[pi_input_len+1];
-        strncpy(pi_input, str+start_position, pi_input_len);
+    // Broadcast str_len
+    MPI_Bcast(&str_len, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+    // > Get shift and scatter len
+    shift = (str_len % p);
+    total_scatter_len = str_len - shift;
+    part_scatter_len = total_scatter_len/p;
+    // > Reserve
+    if (rank==0) {pi_input_len = shift+part_scatter_len;}
+    else {pi_input_len = part_scatter_len;}
+    pi_input = new char[part_scatter_len+1];
+    // Scatter
+    MPI_Scatter(str+shift,part_scatter_len,MPI_CHAR,pi_input,part_scatter_len,MPI_CHAR,0,MPI_COMM_WORLD);
+    pi_input[pi_input_len] = '\0';
+    // Edge case: copy extra data (n%p != 0) to Rank0
+    if (rank == 0 && shift != 0) {
+        strncpy(pi_input, str, pi_input_len);
+    }
 
-        // Send/Recv
-        if (rank != 0) {pi_prev=str[start_position-1];}
+    MPI_Status estado[1];
+    // Send
+    if (rank != p-1) {
+        // SEND pi_input[pi_input_len-1] to rank+1
+        MPI_Send(pi_input+(pi_input_len-1),1,MPI_CHAR,rank+1,0,MPI_COMM_WORLD);
+    }
+    // Recv
+    if (rank != 0) {
+        // RECV save to pi_prev
+        MPI_Recv(&pi_prev,1,MPI_CHAR,rank-1,0,MPI_COMM_WORLD, estado);
+    }
 
+    // PRINT
+    printf("rank: %ld pi_input: %s\n", rank, pi_input);
+    printf("rank: %ld pi_prev: %c\n", rank, pi_prev);
+
+    // TODO: Broadcast table
+
+
+    // PARALIZACION PENDIENTE
+    if (rank == 0){    
         // CALCULATE INITIAL STATES
-        cout << "RANK" << rank << " - str:" << pi_input << endl;
         elem_set R{};
         if (rank == 0) {
             R.insert(0);
@@ -137,31 +164,32 @@ bool parem(char* str, size_t str_len, const table_t &table,const elem_set &accep
 
         // CALCULATE REM
         row_t transition(table.size(),-1);
-        cout << "R: ";
+        
+        printf("R %ld---", rank);
         for (auto &q : R) {
             auto next_q = rem(pi_input,pi_input_len,q,table);
             transition[q] = next_q;
-            cout << q << "->" << next_q << " ";
+            printf("R %ld q=%ld -> next_q=%ld", rank, q, next_q);
         }
         cout << endl;
 
+
         // REDUCE (Send transition)
         partial_result.push_back(transition);
-    }
-
-    // REDUCE
-    // Note: se puede reducir de forma binaria
-    // result[i] =  [ partial_result(i+1)[q] if q!=-1 else -1 for q in partial_result(i) ]
-    elem_t q = 0;
-    for (auto &t : partial_result) {
-        q = t[q];
-        if (q == -1) {break;}
-    }
-    if (accept_states.find(q) != accept_states.end()) {
-        return true;
-    }
-    else {
-        return false;
+        // REDUCE
+        // Note: se puede reducir de forma binaria
+        // result[i] =  [ partial_result(i+1)[q] if q!=-1 else -1 for q in partial_result(i) ]
+        elem_t q = 0;
+        for (auto &t : partial_result) {
+            q = t[q];
+            if (q == -1) {break;}
+        }
+        if (accept_states.find(q) != accept_states.end()) {
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 }
 
@@ -174,7 +202,7 @@ int main(int argc,char **argv) {
     table_t transition_table;
     elem_set accept_states;
     char* str;
-    size_t str_len;
+    unsigned long str_len;
     bool res;
     if (ProcessNo == 0) {
         // GET TABLE FROM STD INPUT
@@ -201,7 +229,7 @@ int main(int argc,char **argv) {
     }
 
     // PaREM
-    if (ProcessNo == 0) res = parem(str, str_len, transition_table, accept_states, NoOfProcess, ProcessNo);
+    res = parem(str, str_len, transition_table, accept_states, NoOfProcess, ProcessNo);
 
     if (ProcessNo == 0){
         cout << "RESULT:" << res << endl;
