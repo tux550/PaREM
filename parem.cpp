@@ -4,8 +4,10 @@
 #include <string>
 #include <algorithm>
 #include <cstring>
-
 #include<mpi.h>
+
+
+
 
 using namespace std;
 
@@ -29,7 +31,7 @@ len_t part_scatter_len;
 char* pi_input;
 len_t pi_input_len;
 char pi_prev;
-// PARTIAL RESULT
+// RESULT VARIABLES
 elem_t* partial_transitions;
 elem_t* total_transitions;
 
@@ -146,27 +148,13 @@ void input_str(int rank, int size) {
 }
 
 elem_t char2elem(char c) {
-    // TODO: modificar con ASCII para version general. este es para el input de ejemplo
-    switch (c)
-    {
-    case 'p':
-        return 0;
-    case 'a':
-        return 1;
-    case 'r':
-        return 2;
-    case 'e':
-        return 3;
-    case 'l':
-        return 4;
-    default:
-        return -1;
-    }
+    return (elem_t) (c-'a');
 }
 
 
 elem_t rem(elem_t q) {
     for (unsigned long i=0;i<pi_input_len; i++) {
+        if (q==-1){return -1;}
         char c = pi_input[i];
         q = get_table(q,char2elem(c));
     }
