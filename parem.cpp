@@ -52,8 +52,13 @@ void conexion_binaria(void *invec, void *inoutvec, int *len, MPI_Datatype* datat
     }
 
     for(auto i = 0; i<*len; i++){
-        inoutvec_val[i] = inoutvec_val_copy[invec_val[i]];
+        if(invec_val[i] == -1)
+            inoutvec_val[i] = -1;
+        else
+            inoutvec_val[i] = inoutvec_val_copy[invec_val[i]];
     }
+
+    delete []inoutvec_val_copy;
 }
 
 
