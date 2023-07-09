@@ -78,6 +78,7 @@ void input_table(int rank, int size) {
     // GET DIMENSIONS
     if (rank == 0) {
         cin >> transitions_n >> alphabet_size >> accept_n;
+        cout<<transitions_n << alphabet_size <<accept_n<<endl;
     }
     // COMMUNICATE DIMENSIONS
     MPI_Bcast(&transitions_n, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
