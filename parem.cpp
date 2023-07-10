@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <cstring>
 #include<mpi/mpi.h>
-
+#include<fstream>
 
 
 
@@ -286,7 +286,8 @@ int main(int argc,char **argv) {
 
 
 
-
+    double T_INICIO, T_FIN;
+    T_INICIO = MPI_Wtime();
     // GET TABLE FROM STD INPUT
     input_table(ProcessNo,NoOfProcess);
     // GET INPUT STR FROM STD INPUT
@@ -298,6 +299,20 @@ int main(int argc,char **argv) {
     if (ProcessNo == 0){
         cout << "RESULT:" << res << endl;
         cout << "END" << endl;        
+    }
+
+    T_FIN = MPI_Wtime();
+
+    if(ProcessNo == 0){
+        ofstream f_tiempo("tiempo.csv", ios::out|ios::app);
+        
+        f_tiempo.seekp(0, ios::end);
+        if(f_tiempo.tellp() == 0){
+            f_tiempo<<"procesos,longitud,estados,tiempo\n";
+        }
+
+        f_tiempo<<NoOfProcess<<','<<str_len<<','<<transitions_n<<','<<T_FIN - T_INICIO<<'\n';
+        f_tiempo.close();
     }
 
     MPI_Finalize();
