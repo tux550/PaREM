@@ -20,6 +20,8 @@ for n_state in states:
         print(f'mpic++ parem.cpp -o exe.out -Dinput_path=\\"./test_automatas/{n_state}q_{size}c.txt\\"')
         
         for p_ in p:
+            if p_ > size:
+                continue
 
             total_time = 0
             total_comm_time = 0
