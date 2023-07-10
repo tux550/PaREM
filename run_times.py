@@ -6,7 +6,7 @@ p = [2,4,8,12]
 
 file = open('tiempos.csv','w')
 
-file.write('procesos,q,longitud,tiempo_tot,tiempo_comm,tiempo_ejec')
+file.write('procesos,q,longitud,tiempo_tot,tiempo_comm,tiempo_ejec\n')
 
 for size in sizes:
 
@@ -31,7 +31,7 @@ for size in sizes:
         total_comm_time /= reps
         total_exe_time /= reps
 
-        file.write(f'{p_},{size},{size},{total_time},{total_comm_time},{total_exe_time}')
+        file.write(f'{p_},{size},{size},{total_time},{total_comm_time},{total_exe_time}\n')
 
 file.close()
 
