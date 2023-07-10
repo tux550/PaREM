@@ -91,7 +91,7 @@ elem_t char2elem(char c) {
 
 
 elem_t rem(elem_t q) {
-    for (unsigned long i=0;i < transitions_n; i++) {
+    for (unsigned long i=0;i < input_str.size(); i++) {
         if (q==-1){return -1;}
         char c = input_str[i];
         q = get_table(q,char2elem(c));
@@ -117,6 +117,7 @@ bool run_rem() {
 
 int main(int argc,char **argv) {
     freopen("./test_automatas/n_1000000/accept.txt", "r", stdin);
+    // freopen("./generate_automatas/result.txt", "r", stdin);
     // freopen("output", "w", stdout);
  
     bool res;

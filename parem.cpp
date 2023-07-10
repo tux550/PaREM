@@ -8,7 +8,8 @@
 #include<mpi/mpi.h>
 #include<fstream>
 
-
+#define MEASURE_TIME // Define to measure time.
+                     // Comment to get result
 
 
 
@@ -39,8 +40,11 @@ elem_t* partial_transitions;
 elem_t* total_transitions;
 elem_t* inoutvec_val_copy;
 
-double total_comm_time = 0;
-double temp_time;
+double total_communication_time = 0;
+double total_computation_time = 0;
+double local_computation_time = 0;
+double start_communication_time;
+double start_computation_time;
 
 // #define GATHEREAR
 #define REDUCIR
@@ -51,9 +55,6 @@ MPI_Op MPI_BIN_CONN;
 void conexion_binaria(void *invec, void *inoutvec, int *len, MPI_Datatype* datatype){
     elem_t *invec_val = (elem_t *) invec;
     elem_t *inoutvec_val = (elem_t *) inoutvec;
-
-    // elem_t *inoutvec_val_copy = new elem_t[*len];
-
     for(auto i = 0; i<*len; i++){
         inoutvec_val_copy[i] = inoutvec_val[i];
     }
@@ -65,7 +66,6 @@ void conexion_binaria(void *invec, void *inoutvec, int *len, MPI_Datatype* datat
             inoutvec_val[i] = inoutvec_val_copy[invec_val[i]];
     }
 
-    // delete []inoutvec_val_copy;
 }
 
 
@@ -84,15 +84,18 @@ void input_table(int rank, int size) {
     elem_t  tmp;
     // GET DIMENSIONS
     if (rank == 0) {
-        cin >> transitions_n >> alphabet_size >> accept_n;
-        temp_time = MPI_Wtime();
+        cin >> transitions_n >> alphabet_size >> accept_n;        
     }
+
     // COMMUNICATE DIMENSIONS
-    
+    #ifdef MEASURE_TIME
+    if (rank == 0) {start_communication_time = MPI_Wtime();}
+    #endif
     MPI_Bcast(&transitions_n, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
     MPI_Bcast(&alphabet_size, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
-
-    if(rank == 0) total_comm_time += MPI_Wtime() - temp_time;
+    #ifdef MEASURE_TIME
+    if(rank == 0) total_communication_time += MPI_Wtime() - start_communication_time;
+    #endif
     // RESERVE TABLE
     inoutvec_val_copy = new elem_t[transitions_n];
     transition_table = new elem_t[transitions_n*alphabet_size];
@@ -105,12 +108,15 @@ void input_table(int rank, int size) {
             }
         }
     }
+
     // COMMUNICATE TABLE
-    if(rank == 0) temp_time = MPI_Wtime();
-
+    #ifdef MEASURE_TIME
+    if(rank == 0) start_communication_time = MPI_Wtime();
+    #endif
     MPI_Bcast(transition_table, transitions_n*alphabet_size, MPI_LONG, 0, MPI_COMM_WORLD);
-
-    if(rank == 0) total_comm_time += MPI_Wtime() - temp_time;
+    #ifdef MEASURE_TIME
+    if(rank == 0) total_communication_time += MPI_Wtime() - start_communication_time;
+    #endif
     // GET ACCEPT STATES
     if (rank == 0) {
         for (auto s=0; s<accept_n; s++) {
@@ -130,6 +136,9 @@ void input_str(int rank, int size) {
     // Tmp vars
     string tmp_str;
 
+    #ifdef MEASURE_TIME
+    if(rank == 0) start_communication_time = MPI_Wtime();
+    #endif
     // ACCEPT STRING
     if (rank == 0) {
         // Accept string
@@ -142,42 +151,34 @@ void input_str(int rank, int size) {
     }
 
     // BROADCAST STR_LEN
-
-    if(rank == 0) temp_time = MPI_Wtime();
-
     MPI_Bcast(&str_len, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
-
-
-    if(rank == 0) total_comm_time += MPI_Wtime() - temp_time;
 
     // CALCULATE SHIFT AND SCATTER LENGTH
     shift             = (str_len % size);    // Remaining
     total_scatter_len = str_len - shift;  // Total Scatter Length
     part_scatter_len  = total_scatter_len/size; // Each process
-    
     // RESERVE STRING SPACE
     if (rank==0) {pi_input_len = shift+part_scatter_len;}
     else {pi_input_len = part_scatter_len;}
     pi_input = new char[pi_input_len+1];
 
     // SCATTER STR
-    if(rank == 0) temp_time = MPI_Wtime();
-
     MPI_Scatter(str+shift,part_scatter_len,MPI_CHAR,pi_input,part_scatter_len,MPI_CHAR,0,MPI_COMM_WORLD);
-
-    if(rank == 0) total_comm_time += MPI_Wtime() - temp_time;
-
     pi_input[pi_input_len] = '\0';
 
     // EDGE CASE: copy extra data (n%p != 0) to Rank0
     if (rank == 0 && shift != 0) {
         strncpy(pi_input, str, pi_input_len);
     }
+    #ifdef MEASURE_TIME
+    if(rank == 0) total_communication_time += MPI_Wtime() - start_communication_time;
+    #endif
 
     // COMMUNICATE BOUNDARIES
     // Send
-    if(rank == 0) temp_time = MPI_Wtime();
-
+    #ifdef MEASURE_TIME
+    if(rank == 0) start_communication_time = MPI_Wtime();
+    #endif
     if (rank != size-1) {
         // SEND pi_input[pi_input_len-1] to rank+1
         MPI_Send(pi_input+(pi_input_len-1),1,MPI_CHAR,rank+1,0,MPI_COMM_WORLD);
@@ -187,8 +188,9 @@ void input_str(int rank, int size) {
         // RECV save to pi_prev
         MPI_Recv(&pi_prev,1,MPI_CHAR,rank-1,0,MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
-
-    if(rank == 0) total_comm_time += MPI_Wtime() - temp_time;
+    #ifdef MEASURE_TIME
+    if(rank == 0) total_communication_time += MPI_Wtime() - start_communication_time;
+    #endif
     // PRINT
     //printf("rank: %d pi_input: %s\n", rank, pi_input);
     //printf("rank: %d pi_prev: %c\n", rank, pi_prev);
@@ -216,6 +218,9 @@ elem_t rem(elem_t q) {
 bool parem(int rank, int size) {
 
     // CALCULATE INITIAL STATES
+    #ifdef MEASURE_TIME
+    start_computation_time = MPI_Wtime(); // START MEASURING COMPUTATION TIME
+    #endif
     elem_set R{};
     if (rank == 0) {
         R.insert(0);
@@ -254,14 +259,22 @@ bool parem(int rank, int size) {
             partial_transitions[q] = -1;
         }
     }
+    #ifdef MEASURE_TIME
+    local_computation_time += MPI_Wtime() - start_computation_time; // STOP MEASURING COMPUTATION TIME
+    #endif
 
+    // REDUCE COMPUTATION TIME
+    #ifdef MEASURE_TIME
+    MPI_Reduce(&local_computation_time, &total_computation_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    total_computation_time = total_computation_time/size; // average
+    #endif
     // GATHER o REDUCE
-    // Note: se puede reducir de forma binaria
-    // result[i] =  [ partial_result(i+1)[q] if q!=-1 else -1 for q in partial_result(i) ]
     #ifdef REDUCIR
+    // result[i] =  [ partial_result(i+1)[q] if q!=-1 else -1 for q in partial_result(i) ]
+    #ifdef MEASURE_TIME
+    if (rank == 0) {start_communication_time = MPI_Wtime();}
+    #endif
     MPI_Reduce(partial_transitions, total_transitions, transitions_n, MPI_LONG, MPI_BIN_CONN, 0, MPI_COMM_WORLD);
-
-
     if (rank == 0) {
         if (accept_states.find(total_transitions[0]) != accept_states.end()) {
            return true;
@@ -270,9 +283,15 @@ bool parem(int rank, int size) {
             return false;
         }
     }
+    #ifdef MEASURE_TIME
+    if(rank == 0) total_communication_time += MPI_Wtime() - start_communication_time;
+    #endif
     #endif
 
     #ifdef GATHEREAR
+    #ifdef MEASURE_TIME
+    if (rank == 0) {start_communication_time = MPI_Wtime();}
+    #endif
     MPI_Gather(partial_transitions,transitions_n,MPI_LONG,total_transitions,transitions_n,MPI_LONG,0,MPI_COMM_WORLD);
     if (rank == 0) {
         cout<<transitions_n<<endl;
@@ -295,11 +314,12 @@ bool parem(int rank, int size) {
             return false;
         }
     }
+    #ifdef MEASURE_TIME
+    if(rank == 0) total_communication_time += MPI_Wtime() - start_communication_time;
     #endif
-    else {
-        return false;
-    }
+    #endif
 
+    return false;
 }
 
 int main(int argc,char **argv) {
@@ -316,9 +336,6 @@ int main(int argc,char **argv) {
     bool res;
 
 
-
-    double T_INICIO, T_FIN;
-    T_INICIO = MPI_Wtime();
     // GET TABLE FROM STD INPUT
     input_table(ProcessNo,NoOfProcess);
     // GET INPUT STR FROM STD INPUT
@@ -326,25 +343,17 @@ int main(int argc,char **argv) {
 
     // PaREM
     res = parem(ProcessNo,NoOfProcess);
+    
 
-    if (ProcessNo == 0){
-        // cout << "RESULT:" << res << endl;
-        // cout << "END" << endl;        
-    }
-
-    T_FIN = MPI_Wtime();
-
+    #ifdef MEASURE_TIME
     if(ProcessNo == 0){
-        // ofstream f_tiempo("tiempo.csv", ios::out|ios::app);
-        
-        // f_tiempo.seekp(0, ios::end);
-        // if(f_tiempo.tellp() == 0){
-            // f_tiempo<<"procesos,longitud,estados,tiempo_tot,tiempo_comm,tiempo_ejec\n";
-        // }
-
-        cout<<T_FIN - T_INICIO<<','<<(total_comm_time)<<','<<(T_FIN - T_INICIO - total_comm_time);
-        // f_tiempo.close();
+        cout<<total_computation_time+total_communication_time<<','<<(total_communication_time)<<','<<(total_computation_time);
     }
+    #else
+    if (ProcessNo == 0){
+        cout << "RESULT:" << res << endl;        
+    }
+    #endif
 
     MPI_Finalize();
     return 0;
