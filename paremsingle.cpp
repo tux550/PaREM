@@ -118,7 +118,8 @@ bool run_rem() {
 int main(int argc,char **argv) {
     // freopen("./test_automatas/n_1000000/accept.txt", "r", stdin);
     // freopen("./generate_automatas/result.txt", "r", stdin);
-    freopen("./generate_automatas/result.txt", "r", stdin);
+    // freopen("./generate_automatas/result.txt", "r", stdin);
+    freopen(input_path, "r", stdin);
     // freopen("output", "w", stdout);
  
     bool res;
