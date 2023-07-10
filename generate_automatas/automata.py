@@ -2,7 +2,7 @@ import random
 
 alphabet_size = 24
 string_size = 1_000_000
-n = 1000
+n = 100
 accept_states =  1
 automaton_to_write = [[-1 for j in range(alphabet_size)] for i in range(n)]
 accept_states = [0]
