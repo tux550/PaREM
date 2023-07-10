@@ -11,6 +11,7 @@
 
 
 
+
 using namespace std;
 
 using count_t = long;
@@ -37,6 +38,9 @@ char pi_prev;
 elem_t* partial_transitions;
 elem_t* total_transitions;
 elem_t* inoutvec_val_copy;
+
+double total_comm_time = 0;
+double temp_time;
 
 // #define GATHEREAR
 #define REDUCIR
@@ -81,10 +85,14 @@ void input_table(int rank, int size) {
     // GET DIMENSIONS
     if (rank == 0) {
         cin >> transitions_n >> alphabet_size >> accept_n;
+        temp_time = MPI_Wtime();
     }
     // COMMUNICATE DIMENSIONS
+    
     MPI_Bcast(&transitions_n, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
     MPI_Bcast(&alphabet_size, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+
+    if(rank == 0) total_comm_time += MPI_Wtime() - temp_time;
     // RESERVE TABLE
     inoutvec_val_copy = new elem_t[transitions_n];
     transition_table = new elem_t[transitions_n*alphabet_size];
@@ -98,7 +106,11 @@ void input_table(int rank, int size) {
         }
     }
     // COMMUNICATE TABLE
+    if(rank == 0) temp_time = MPI_Wtime();
+
     MPI_Bcast(transition_table, transitions_n*alphabet_size, MPI_LONG, 0, MPI_COMM_WORLD);
+
+    if(rank == 0) total_comm_time += MPI_Wtime() - temp_time;
     // GET ACCEPT STATES
     if (rank == 0) {
         for (auto s=0; s<accept_n; s++) {
@@ -130,7 +142,13 @@ void input_str(int rank, int size) {
     }
 
     // BROADCAST STR_LEN
+
+    if(rank == 0) temp_time = MPI_Wtime();
+
     MPI_Bcast(&str_len, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+
+
+    if(rank == 0) total_comm_time += MPI_Wtime() - temp_time;
 
     // CALCULATE SHIFT AND SCATTER LENGTH
     shift             = (str_len % size);    // Remaining
@@ -143,7 +161,12 @@ void input_str(int rank, int size) {
     pi_input = new char[pi_input_len+1];
 
     // SCATTER STR
+    if(rank == 0) temp_time = MPI_Wtime();
+
     MPI_Scatter(str+shift,part_scatter_len,MPI_CHAR,pi_input,part_scatter_len,MPI_CHAR,0,MPI_COMM_WORLD);
+
+    if(rank == 0) total_comm_time += MPI_Wtime() - temp_time;
+
     pi_input[pi_input_len] = '\0';
 
     // EDGE CASE: copy extra data (n%p != 0) to Rank0
@@ -153,6 +176,8 @@ void input_str(int rank, int size) {
 
     // COMMUNICATE BOUNDARIES
     // Send
+    if(rank == 0) temp_time = MPI_Wtime();
+
     if (rank != size-1) {
         // SEND pi_input[pi_input_len-1] to rank+1
         MPI_Send(pi_input+(pi_input_len-1),1,MPI_CHAR,rank+1,0,MPI_COMM_WORLD);
@@ -163,6 +188,7 @@ void input_str(int rank, int size) {
         MPI_Recv(&pi_prev,1,MPI_CHAR,rank-1,0,MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
 
+    if(rank == 0) total_comm_time += MPI_Wtime() - temp_time;
     // PRINT
     //printf("rank: %d pi_input: %s\n", rank, pi_input);
     //printf("rank: %d pi_prev: %c\n", rank, pi_prev);
@@ -277,7 +303,7 @@ bool parem(int rank, int size) {
 }
 
 int main(int argc,char **argv) {
-    freopen("./test_automatas/n_1000000/fail.txt", "r", stdin);
+    freopen(input_path, "r", stdin);
     // freopen("output", "w", stdout);
  
     int NoOfProcess, ProcessNo;
@@ -287,8 +313,6 @@ int main(int argc,char **argv) {
 
     MPI_Op_create(conexion_binaria,0, &MPI_BIN_CONN);    
 
-    char* str;
-    unsigned long str_len;
     bool res;
 
 
@@ -304,22 +328,22 @@ int main(int argc,char **argv) {
     res = parem(ProcessNo,NoOfProcess);
 
     if (ProcessNo == 0){
-        cout << "RESULT:" << res << endl;
-        cout << "END" << endl;        
+        // cout << "RESULT:" << res << endl;
+        // cout << "END" << endl;        
     }
 
     T_FIN = MPI_Wtime();
 
     if(ProcessNo == 0){
-        ofstream f_tiempo("tiempo.csv", ios::out|ios::app);
+        // ofstream f_tiempo("tiempo.csv", ios::out|ios::app);
         
-        f_tiempo.seekp(0, ios::end);
-        if(f_tiempo.tellp() == 0){
-            f_tiempo<<"procesos,longitud,estados,tiempo\n";
-        }
+        // f_tiempo.seekp(0, ios::end);
+        // if(f_tiempo.tellp() == 0){
+            // f_tiempo<<"procesos,longitud,estados,tiempo_tot,tiempo_comm,tiempo_ejec\n";
+        // }
 
-        f_tiempo<<NoOfProcess<<','<<str_len<<','<<transitions_n<<','<<T_FIN - T_INICIO<<'\n';
-        f_tiempo.close();
+        cout<<T_FIN - T_INICIO<<','<<(total_comm_time)<<','<<(T_FIN - T_INICIO - total_comm_time);
+        // f_tiempo.close();
     }
 
     MPI_Finalize();
