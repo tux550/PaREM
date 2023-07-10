@@ -5,7 +5,7 @@ states = [10,]#100,1000]
 sizes = [10,100,1000,10_000,100_000,1_000_000,10_000_000]
 reps = 5 
 p = [1,2,3,4,5,6,7,8,9,10,11,12]
-par_exe = "rem/parem.exe"
+par_exe = "../rem/parem.exe"
 
 file = open('tiempos_par.csv','w')
 
@@ -13,7 +13,7 @@ file.write('procesos,q,longitud,tiempo_tot,tiempo_comm,tiempo_ejec\n')
 
 for n_state in states:
     for size in sizes:
-        automata_filename = f"./generate_automatas/{n_state}q_{size}c.txt"
+        automata_filename = f"../generate_automatas/{n_state}q_{size}c.txt"
         print(f"Running: {size},{n_state}")
         print(f"File: {automata_filename}")
         for p_ in p:
