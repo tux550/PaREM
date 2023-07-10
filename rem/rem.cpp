@@ -7,7 +7,8 @@
 #include <algorithm>
 #include <cstring>
 
-
+#define MEASURE_TIME // Define to measure time.
+                     // Comment to get result
 
 
 
@@ -116,12 +117,8 @@ bool run_rem() {
 }
 
 int main(int argc,char **argv) {
-    // freopen("./test_automatas/n_1000000/accept.txt", "r", stdin);
-    // freopen("./generate_automatas/result.txt", "r", stdin);
-    // freopen("./generate_automatas/result.txt", "r", stdin);
-    if(argc < 2) exit(1);
+    //freopen(input_path, "r", stdin);
     freopen(argv[1], "r", stdin);
-    // freopen("output", "w", stdout);
  
     bool res;
 
@@ -135,9 +132,12 @@ int main(int argc,char **argv) {
     res = run_rem();
     auto t2 = std::chrono::high_resolution_clock::now();
 
-    cout << "RESULT:" << res << endl;
-    // cout << "END" << endl;        
+    #ifdef MEASURE_TIME
     cout<< (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count())/1000000.0;
+    #else
+    cout << "RESULT:" << res << endl;
+    cout << "END" << endl;        
+    #endif
     
 
     return 0;

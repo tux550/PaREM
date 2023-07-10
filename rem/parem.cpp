@@ -323,20 +323,19 @@ bool parem(int rank, int size) {
 }
 
 int main(int argc,char **argv) {
-    freopen(input_path, "r", stdin);
-    
-    // freopen("output", "w", stdout);
- 
+    // Init 
     int NoOfProcess, ProcessNo;
     MPI_Init(&argc, &argv);    
     MPI_Comm_size(MPI_COMM_WORLD, &NoOfProcess);
     MPI_Comm_rank(MPI_COMM_WORLD, &ProcessNo);
-
     MPI_Op_create(conexion_binaria,0, &MPI_BIN_CONN);    
-
     bool res;
 
-
+    // GET INPUT PATH
+    if (ProcessNo == 0){
+        freopen(argv[1], "r", stdin);
+    }
+    
     // GET TABLE FROM STD INPUT
     input_table(ProcessNo,NoOfProcess);
     // GET INPUT STR FROM STD INPUT
