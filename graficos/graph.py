@@ -9,7 +9,9 @@ qs = t_seq.q.unique()
 ns = t_seq.longitud.unique()
 ps = [2,4,8,12]#t_par.procesos.unique()
 
-print(qs,ns,ps)
+print("q",qs)
+print("n",ns)
+print("p",ps)
 
 
 #Colors
@@ -30,6 +32,14 @@ for q in qs:
         parallel_p =  t_par[t_par.q == q]
         parallel_p = parallel_p[parallel_p.procesos == p]
         parallel_p = parallel_p[["longitud","tiempo_tot","tiempo_comm","tiempo_ejec"]]
+        # ADD SPEEDUP
+        tmp = parallel_p[["longitud","tiempo_tot"]].merge(sequential[["longitud","tiempo_ejec"]], on=["longitud",], how='left')
+        tmp["speedup"] = tmp["tiempo_ejec"]/tmp["tiempo_tot"]
+        tmp = tmp [["longitud","speedup"]]
+        parallel_p = parallel_p.merge(tmp[["longitud","speedup"]], on=["longitud",], how='left')
+        # ADD EFICENCY
+        parallel_p["efficency"] = parallel_p["speedup"]/p
+        #Append
         parallels.append( (p, parallel_p) )
     #Plot
     plt.title(f"Tiempos Totales q={q}")
@@ -66,4 +76,22 @@ for q in qs:
     plt.legend()
     show_plt()
     plt.savefig(f'tiempos_paralelo_q{q}.png')
+    plt.clf()
+
+    # Plot speed up
+    plt.title(f"Speedup q={q}")
+    for i, (p, parallel_p) in enumerate( parallels ):
+        plt.plot(parallel_p.longitud, parallel_p.speedup,marker="o", color=par_colors[i],label=f"MPI:p={p}")
+    plt.legend()
+    show_plt()
+    plt.savefig(f'speedup_q{q}.png')
+    plt.clf()
+
+    # Plot efficency
+    plt.title(f"Efficency q={q}")
+    for i, (p, parallel_p) in enumerate( parallels ):
+        plt.plot(parallel_p.longitud, parallel_p.speedup,marker="o", color=par_colors[i],label=f"MPI:p={p}")
+    plt.legend()
+    show_plt()
+    plt.savefig(f'efficency_q{q}.png')
     plt.clf()
