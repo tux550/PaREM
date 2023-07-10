@@ -16,40 +16,54 @@ print(qs,ns,ps)
 seq_color = "red"
 par_colors = ['black', 'blue', 'brown', 'green']
 
+
+show = False
+def show_plt():
+    if show:
+        plt.show()
+
 for q in qs:
     # Extract
     sequential = t_seq[t_seq.q == q][["longitud","tiempo_ejec"]]
     parallels = []
     for p in ps:
-        parallel_p =  t_par[t_par.q == q][t_par.procesos == p]
+        parallel_p =  t_par[t_par.q == q]
+        parallel_p = parallel_p[parallel_p.procesos == p]
         parallel_p = parallel_p[["longitud","tiempo_tot","tiempo_comm","tiempo_ejec"]]
         parallels.append( (p, parallel_p) )
     #Plot
-    plt.title("Tiempos Totales")
-    plt.plot(sequential.longitud, sequential.tiempo_ejec, marker="o", color=seq_color)
+    plt.title(f"Tiempos Totales q={q}")
+    plt.plot(sequential.longitud, sequential.tiempo_ejec, marker="o", color=seq_color, label="Sequential")
     for i, (p, parallel_p) in enumerate( parallels ):
-        print(parallel_p)
-        plt.plot(parallel_p.longitud, parallel_p.tiempo_tot,marker="o", color=par_colors[i])
-    plt.show()
+        plt.plot(parallel_p.longitud, parallel_p.tiempo_tot,marker="o", color=par_colors[i],label=f"MPI:p={p}")
+    plt.legend()
+    show_plt()
+    plt.savefig(f'tiempos_totales_q{q}.png')
+    plt.clf()
 
-    plt.title("Tiempos Ejecucción")
-    plt.plot(sequential.longitud, sequential.tiempo_ejec, marker="o", color=seq_color)
+    plt.title(f"Tiempos Ejecución q={q}")
+    plt.plot(sequential.longitud, sequential.tiempo_ejec, marker="o", color=seq_color, label="Sequential")
     for i, (p, parallel_p) in enumerate(parallels):
-        plt.plot(parallel_p.longitud, parallel_p.tiempo_ejec, marker="o", color=par_colors[i])
-    plt.show()
-
-    plt.title("Tiempos Comunicación")
+        plt.plot(parallel_p.longitud, parallel_p.tiempo_ejec, marker="o", color=par_colors[i],label=f"MPI:p={p}")
+    plt.legend()
+    show_plt()
+    plt.savefig(f'tiempos_ejecucion_q{q}.png')
+    plt.clf()
+    
+    plt.title(f"Tiempos Comunicación q={q}")
     for i, (p, parallel_p) in enumerate(parallels):
-        plt.plot(parallel_p.longitud, parallel_p.tiempo_comm, marker="o", color=par_colors[i])
-    plt.show()
+        plt.plot(parallel_p.longitud, parallel_p.tiempo_comm, marker="o", color=par_colors[i],label=f"MPI:p={p}")
+    plt.legend()
+    show_plt()
+    plt.savefig(f'tiempos_comunicacion_q{q}.png')
+    plt.clf()
 
-
-    plt.title("Tiempos en Paralelo")
+    plt.title(f"Tiempos en Paralelo q={q}")
     for i,(p, parallel_p) in enumerate(parallels):
-        plt.plot(parallel_p.longitud, parallel_p.tiempo_tot, marker="o", color=par_colors[i])
+        plt.plot(parallel_p.longitud, parallel_p.tiempo_tot, marker="o", color=par_colors[i],label=f"MPI:p={p}")
         plt.plot(parallel_p.longitud, parallel_p.tiempo_ejec,"--", marker="o", color=par_colors[i]) # Dashed para tiempo de ejecucion
         plt.plot(parallel_p.longitud, parallel_p.tiempo_comm,":", marker="o", color=par_colors[i]) # Dotted para tiempo de comm
-    plt.show()
-
-
-    break
+    plt.legend()
+    show_plt()
+    plt.savefig(f'tiempos_paralelo_q{q}.png')
+    plt.clf()
