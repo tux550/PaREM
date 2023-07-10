@@ -136,7 +136,7 @@ int main(int argc,char **argv) {
 
     // cout << "RESULT:" << res << endl;
     // cout << "END" << endl;        
-    cout<< (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count())/1000000.0<<endl;
+    cout<< (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count())/1000000.0;
     
 
     return 0;

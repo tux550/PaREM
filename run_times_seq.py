@@ -12,11 +12,11 @@ file.write('q,longitud,tiempo_ejec\n')
 for n_state in states:
     for size in sizes:
         print(size,n_state)
-        subprocess.run(f'mpic++ parem.cpp -o exe.out -Dinput_path=\\"./test_automatas/{n_state}q_{size}c.txt\\"',
+        subprocess.run(f'g++ paremsingle.cpp -o exe -Dinput_path=\\"./generate_automatas/{n_state}q_{size}c.txt\\"',
                     shell=True)
         total_exe_time = 0
         for _ in range(reps):
-            exe_time = subprocess.check_output(f'mpirun -np {p_} ./exe.out',shell=True).decode().split(',')
+            exe_time = subprocess.check_output(f'./exe',shell=True).decode()
 
             total_exe_time+= float(exe_time)
 
