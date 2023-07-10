@@ -146,9 +146,10 @@ def generate_automata(alphabet_size,string_size,n,file):
     file.close()
 
 states = [10, 100, 1000]
-string_sizes = [10,100,1_000,10_000,100_000,1_000_000,10_000_000]
+string_sizes = [100_000,500_000,1_000_000,5_000_000,10_000_000,50_000_000]
+#[10,100,1_000,10_000,100_000,1_000_000,10_000_000]
 
-
+random.seed(42)
 for n_state in states:
     for size in string_sizes:
         create_random_automata(24,size,n_state,f'{n_state}q_{size}c.txt')
