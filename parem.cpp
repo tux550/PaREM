@@ -324,6 +324,7 @@ bool parem(int rank, int size) {
 
 int main(int argc,char **argv) {
     freopen(input_path, "r", stdin);
+    
     // freopen("output", "w", stdout);
  
     int NoOfProcess, ProcessNo;

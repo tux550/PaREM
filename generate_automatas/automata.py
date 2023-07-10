@@ -1,11 +1,11 @@
 import random
 import math
 
-def create_random_automata(n,alphabet_size,string_size,file):
-    n_accept_states = math.ceil(n/1000)
+def create_random_automata(alphabet_size,string_size,n,file):
+    n_accept_states = math.ceil(n/100)
     states = {i for i in range(1,n)}
-    accept_states = random.sample(range(1,n),k=n_accept_states)
-    accept_states.insert(0)
+    accept_states = set(random.sample(range(1,n),k=n_accept_states))
+    accept_states.add(0)
     open_set = {0}
     #automaton[i][0] estados a los que se puede ir (con su simbolo)
     #automaton[i][1] estados a los que se puede regresar (con su simbolo)
@@ -79,6 +79,7 @@ def create_random_automata(n,alphabet_size,string_size,file):
     # print(np.array(not_used_symbols))
 
     automaton_to_write[0][1] = 0 
+    accept_states = list(accept_states)
 
     file = open(file,'w')
     file.write(f'{n} {alphabet_size} {len(accept_states)}\n')
@@ -150,4 +151,4 @@ string_sizes = [10,100,1_000,10_000,100_000,1_000_000,10_000_000]
 
 for n_state in states:
     for size in string_sizes:
-        generate_automata(24,size,n_state,f'{n_state}q_{size}c.txt')
+        create_random_automata(24,size,n_state,f'{n_state}q_{size}c.txt')
