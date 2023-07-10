@@ -13,6 +13,7 @@ for n_state in states:
         total_exe_time = 0
         automata_filename = f"./generate_automatas/{n_state}q_{size}c.txt"
         print(f"Running: {size},{n_state}")
+        print(f"File: {automata_filename}")
         for _ in range(reps):
             exe_time = subprocess.check_output(f'{seq_exe} {automata_filename}',shell=True).decode()
             total_exe_time+= float(exe_time)
