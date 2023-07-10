@@ -1,10 +1,12 @@
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <set>
 #include <string>
 #include <algorithm>
 #include <cstring>
 #include<mpi/mpi.h>
+
 
 
 
@@ -34,6 +36,7 @@ char pi_prev;
 // RESULT VARIABLES
 elem_t* partial_transitions;
 elem_t* total_transitions;
+elem_t* inoutvec_val_copy;
 
 // #define GATHEREAR
 #define REDUCIR
@@ -45,7 +48,7 @@ void conexion_binaria(void *invec, void *inoutvec, int *len, MPI_Datatype* datat
     elem_t *invec_val = (elem_t *) invec;
     elem_t *inoutvec_val = (elem_t *) inoutvec;
 
-    elem_t *inoutvec_val_copy = new elem_t[*len];
+    // elem_t *inoutvec_val_copy = new elem_t[*len];
 
     for(auto i = 0; i<*len; i++){
         inoutvec_val_copy[i] = inoutvec_val[i];
@@ -58,7 +61,7 @@ void conexion_binaria(void *invec, void *inoutvec, int *len, MPI_Datatype* datat
             inoutvec_val[i] = inoutvec_val_copy[invec_val[i]];
     }
 
-    delete []inoutvec_val_copy;
+    // delete []inoutvec_val_copy;
 }
 
 
@@ -78,12 +81,12 @@ void input_table(int rank, int size) {
     // GET DIMENSIONS
     if (rank == 0) {
         cin >> transitions_n >> alphabet_size >> accept_n;
-        cout<<transitions_n << alphabet_size <<accept_n<<endl;
     }
     // COMMUNICATE DIMENSIONS
     MPI_Bcast(&transitions_n, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
     MPI_Bcast(&alphabet_size, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
     // RESERVE TABLE
+    inoutvec_val_copy = new elem_t[transitions_n];
     transition_table = new elem_t[transitions_n*alphabet_size];
     // GET TABLE
     if (rank == 0) {
@@ -137,7 +140,7 @@ void input_str(int rank, int size) {
     // RESERVE STRING SPACE
     if (rank==0) {pi_input_len = shift+part_scatter_len;}
     else {pi_input_len = part_scatter_len;}
-    pi_input = new char[part_scatter_len+1];
+    pi_input = new char[pi_input_len+1];
 
     // SCATTER STR
     MPI_Scatter(str+shift,part_scatter_len,MPI_CHAR,pi_input,part_scatter_len,MPI_CHAR,0,MPI_COMM_WORLD);
@@ -274,6 +277,9 @@ bool parem(int rank, int size) {
 }
 
 int main(int argc,char **argv) {
+    freopen("./test_automatas/n_1000000/fail.txt", "r", stdin);
+    // freopen("output", "w", stdout);
+ 
     int NoOfProcess, ProcessNo;
     MPI_Init(&argc, &argv);    
     MPI_Comm_size(MPI_COMM_WORLD, &NoOfProcess);
