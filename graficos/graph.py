@@ -42,38 +42,47 @@ for q in qs:
         #Append
         parallels.append( (p, parallel_p) )
     #Plot
-    plt.title(f"Tiempos Totales q={q}")
+    plt.title(f"Tiempos (s) Totales q={q}")
     plt.plot(sequential.longitud, sequential.tiempo_ejec, marker="o", color=seq_color, label="Sequential")
     for i, (p, parallel_p) in enumerate( parallels ):
         plt.plot(parallel_p.longitud, parallel_p.tiempo_tot,marker="o", color=par_colors[i],label=f"MPI:p={p}")
     plt.legend()
+    plt.xlabel("Longitud de cadena $n$")
+    plt.ylabel(f"$T_{{Total}}$ (s)")
     show_plt()
     plt.savefig(f'tiempos_totales_q{q}.png')
     plt.clf()
 
-    plt.title(f"Tiempos Ejecución q={q}")
+    plt.title(f"Tiempos (s) Ejecución q={q}")
     plt.plot(sequential.longitud, sequential.tiempo_ejec, marker="o", color=seq_color, label="Sequential")
     for i, (p, parallel_p) in enumerate(parallels):
         plt.plot(parallel_p.longitud, parallel_p.tiempo_ejec, marker="o", color=par_colors[i],label=f"MPI:p={p}")
     plt.legend()
+    plt.xlabel("Longitud de cadena $n$")
+    plt.ylabel(f"$T_{{Comp}}$ (s)")
     show_plt()
     plt.savefig(f'tiempos_ejecucion_q{q}.png')
     plt.clf()
     
-    plt.title(f"Tiempos Comunicación q={q}")
+    plt.title(f"Tiempos (s) Comunicación q={q}")
     for i, (p, parallel_p) in enumerate(parallels):
         plt.plot(parallel_p.longitud, parallel_p.tiempo_comm, marker="o", color=par_colors[i],label=f"MPI:p={p}")
     plt.legend()
+    plt.xlabel("Longitud de cadena $n$")
+    plt.ylabel(f"$T_{{Comm}}$ (s)")
     show_plt()
     plt.savefig(f'tiempos_comunicacion_q{q}.png')
     plt.clf()
 
-    plt.title(f"Tiempos en Paralelo q={q}")
+    plt.figure(figsize=(8, 6))
+    plt.title(f"Tiempos (s) en Paralelo q={q}")
     for i,(p, parallel_p) in enumerate(parallels):
         plt.plot(parallel_p.longitud, parallel_p.tiempo_tot, marker="o", color=par_colors[i],label=f"MPI:p={p}")
-        plt.plot(parallel_p.longitud, parallel_p.tiempo_ejec,"--", marker="o", color=par_colors[i]) # Dashed para tiempo de ejecucion
-        plt.plot(parallel_p.longitud, parallel_p.tiempo_comm,":", marker="o", color=par_colors[i]) # Dotted para tiempo de comm
+        plt.plot(parallel_p.longitud, parallel_p.tiempo_ejec,"--", marker="o", color=par_colors[i],label=f"MPI:p={p} $T_{{Comp}}$") # Dashed para tiempo de ejecucion
+        plt.plot(parallel_p.longitud, parallel_p.tiempo_comm,":", marker="o", color=par_colors[i],label=f"MPI:p={p} $T_{{Comm}}$") # Dotted para tiempo de comm
     plt.legend()
+    plt.xlabel("Longitud de cadena $n$")
+    plt.ylabel("Tiempo (s)")
     show_plt()
     plt.savefig(f'tiempos_paralelo_q{q}.png')
     plt.clf()
@@ -83,6 +92,8 @@ for q in qs:
     for i, (p, parallel_p) in enumerate( parallels ):
         plt.plot(parallel_p.longitud, parallel_p.speedup,marker="o", color=par_colors[i],label=f"MPI:p={p}")
     plt.legend()
+    plt.xlabel("Longitud de cadena $n$")
+    plt.ylabel("Speedup")
     show_plt()
     plt.savefig(f'speedup_q{q}.png')
     plt.clf()
@@ -92,6 +103,8 @@ for q in qs:
     for i, (p, parallel_p) in enumerate( parallels ):
         plt.plot(parallel_p.longitud, parallel_p.speedup,marker="o", color=par_colors[i],label=f"MPI:p={p}")
     plt.legend()
+    plt.xlabel("Longitud de cadena $n$")
+    plt.ylabel("Eficiencia")
     show_plt()
     plt.savefig(f'efficency_q{q}.png')
     plt.clf()
